@@ -1,0 +1,81 @@
+import csv
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.common.exceptions import NoSuchElementException
+import time
+
+# Set path to the chromedriver executable
+driver = webdriver.Chrome('path/to/chromedriver')
+url = "https://www.gastronomos.gr/oles-oi-syntages/"
+
+# Send a GET request to the URL
+driver.get(url)
+time.sleep(4)
+
+# Open a CSV file in write mode with UTF-8 encoding
+with open('recipes.csv', mode='w', newline='', encoding='utf-8') as file:
+    writer = csv.writer(file)
+
+    # Write the header row in the CSV file
+    writer.writerow(['Recipe Title', 'Ingredients', 'Steps'])
+
+    # Iterate through all the pages
+    page_count = 0
+    while True:
+        try:
+            page_count += 1
+            print(f"Page: {page_count}")
+
+            # Find all the recipe titles on the page
+            titles = driver.find_elements(By.CLASS_NAME, "nx-medium-title")
+
+            for index in range(len(titles)):
+                try:
+                    # Find all the recipe titles again
+                    titles = driver.find_elements(By.CLASS_NAME, "nx-medium-title")
+
+                    # Get the recipe title
+                    recipe_title = titles[index].text.strip()
+                    print(recipe_title)
+
+                    # Click on the title to access the recipe
+                    titles[index].click()
+                    time.sleep(3)
+
+                    # Get the ingredients
+                    ingredient_element = driver.find_element(By.CLASS_NAME, "dr-unordered-list")
+                    ingredients = ingredient_element.find_elements(By.TAG_NAME, "li")
+
+                    # Iterate over the ingredients and store them in a list
+                    ingredient_list = [ingredient.text.strip() for ingredient in ingredients]
+                    print(ingredient_list)
+
+                    # Get the steps
+                    step_element = driver.find_element(By.CLASS_NAME, "dr-instructions")
+                    steps = step_element.find_elements(By.TAG_NAME, "li")
+
+                    # Iterate over the steps and store them in a list
+                    step_list = [step.text.strip() for step in steps]
+                    print(step_list)
+
+                    # Write the data to the CSV file
+                    writer.writerow([recipe_title, ', '.join(ingredient_list), ', '.join(step_list)])
+
+                    # Go back to the original page
+                    driver.back()
+                    time.sleep(3)
+
+                except Exception as e:
+                    print(f"Error: {e}")
+
+            # Find the "Next" button and click on it to go to the next page
+            next_button = driver.find_element(By.CLASS_NAME, "next")
+            next_button.click()
+            time.sleep(3)
+
+        except NoSuchElementException:
+            print("Scraping completed.")
+            break
+
+# Close the browser
+driver.quit()
